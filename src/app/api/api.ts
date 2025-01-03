@@ -40,13 +40,13 @@ interface Output {
   personal_information?: PersonalInformation | null;
   contact?: Contact | null;
   experience: Experience[] | null;
-  education: Education | null;
+  education: Education[] | null;
   additional_information?: AdditionalInformation | null;
 }
 
 function Api() {
   const [output, setOutput] = useState<Output | null>();
-  const APIKEY = process.env.OPENAI_API_KEY!;
+  const [loading, setLoading] = useState(false);
 
   const handleOpenAI = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -54,6 +54,7 @@ function Api() {
   ) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -110,7 +111,7 @@ function Api() {
         },
         {
           headers: {
-            Authorization: `Bearer ${APIKEY}`,
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
             "Content-Type": "application/json",
           },
         }
@@ -122,10 +123,12 @@ function Api() {
       );
     } catch (error) {
       console.error("Error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return { output, setOutput, handleOpenAI };
+  return { output, setOutput, handleOpenAI, loading };
 }
 
 export default Api;

@@ -8,6 +8,8 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { VscJson } from "react-icons/vsc";
 import { ReactTyped } from "react-typed";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 interface Experience {
   company?: string;
@@ -27,7 +29,7 @@ interface Education {
 }
 
 export default function Home() {
-  const { output, setOutput, handleOpenAI } = Api();
+  const { output, setOutput, handleOpenAI, loading } = Api();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("summarize");
@@ -164,224 +166,248 @@ export default function Home() {
             <div
               className={`h-full w-full flex flex-col items-start  ${
                 output ? "justify-start" : "justify-center"
-              } ${output ? "gap-6" : "gap-20"} font-sans`}
+              } ${output ? "gap-6" : loading ? "gap-6" : "gap-20"} font-sans`}
             >
-              {output?.personal_information && (
-                <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
-                  <ReactTyped
-                    strings={[`${output.personal_information?.name}`]}
-                    className="text-2xl font-bold"
-                    typeSpeed={10}
-                    showCursor={false}
-                    startWhenVisible={true}
-                  />
-                  <ReactTyped
-                    strings={[`${output.personal_information?.title}`]}
-                    className="text-xl font-semibold"
-                    typeSpeed={10}
-                    showCursor={false}
-                    startDelay={200}
-                    startWhenVisible={true}
-                  />
-                  <ReactTyped
-                    strings={[`${output.personal_information?.city}`]}
-                    className="text-lg"
-                    typeSpeed={10}
-                    showCursor={false}
-                    startDelay={300}
-                    startWhenVisible={true}
-                  />
-                </div>
+              {loading ? (
+                <Skeleton height={20} width={200} count={3} />
+              ) : (
+                output?.personal_information && (
+                  <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
+                    <ReactTyped
+                      strings={[`${output.personal_information?.name}`]}
+                      className="text-2xl font-bold"
+                      typeSpeed={10}
+                      showCursor={false}
+                      startWhenVisible={true}
+                    />
+                    <ReactTyped
+                      strings={[`${output.personal_information?.title}`]}
+                      className="text-xl font-semibold"
+                      typeSpeed={10}
+                      showCursor={false}
+                      startDelay={200}
+                      startWhenVisible={true}
+                    />
+                    <ReactTyped
+                      strings={[`${output.personal_information?.city}`]}
+                      className="text-lg"
+                      typeSpeed={10}
+                      showCursor={false}
+                      startDelay={300}
+                      startWhenVisible={true}
+                    />
+                  </div>
+                )
               )}
               <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
                 <div className="text-xl font-semibold">Contact</div>
-                {output?.contact && (
-                  <div className="space-y-1 font-semibold">
-                    <div className="grid grid-cols-3 items-center">
-                      <ReactTyped
-                        strings={[`Email`]}
-                        className="text-sm md:text-base"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={400}
-                        startWhenVisible={true}
-                      />
-                      <ReactTyped
-                        strings={[`: ${output.contact?.email}`]}
-                        className="text-sm md:text-base col-span-2"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={400}
-                        startWhenVisible={true}
-                      />
+                {loading ? (
+                  <Skeleton height={20} width={200} count={3} />
+                ) : (
+                  output?.contact && (
+                    <div className="space-y-1 font-semibold">
+                      <div className="grid grid-cols-3 items-center">
+                        <ReactTyped
+                          strings={[`Email`]}
+                          className="text-sm md:text-base"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={400}
+                          startWhenVisible={true}
+                        />
+                        <ReactTyped
+                          strings={[`: ${output.contact?.email}`]}
+                          className="text-sm md:text-base col-span-2"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={400}
+                          startWhenVisible={true}
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center">
+                        <ReactTyped
+                          strings={[`Linkedin`]}
+                          className="text-sm md:text-base"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={500}
+                          startWhenVisible={true}
+                        />
+                        <ReactTyped
+                          strings={[`: ${output.contact?.linkedin || "-"}`]}
+                          className="text-sm md:text-base col-span-2"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={500}
+                          startWhenVisible={true}
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center">
+                        <ReactTyped
+                          strings={[`Phone`]}
+                          className="text-sm md:text-base"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={600}
+                          startWhenVisible={true}
+                        />
+                        <ReactTyped
+                          strings={[`: ${output.contact?.phone || "-"}`]}
+                          className="text-sm md:text-base col-span-2"
+                          typeSpeed={10}
+                          showCursor={false}
+                          startDelay={600}
+                          startWhenVisible={true}
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 items-center">
-                      <ReactTyped
-                        strings={[`Linkedin`]}
-                        className="text-sm md:text-base"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={500}
-                        startWhenVisible={true}
-                      />
-                      <ReactTyped
-                        strings={[`: ${output.contact?.linkedin || "-"}`]}
-                        className="text-sm md:text-base col-span-2"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={500}
-                        startWhenVisible={true}
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 items-center">
-                      <ReactTyped
-                        strings={[`Phone`]}
-                        className="text-sm md:text-base"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={600}
-                        startWhenVisible={true}
-                      />
-                      <ReactTyped
-                        strings={[`: ${output.contact?.phone || "-"}`]}
-                        className="text-sm md:text-base col-span-2"
-                        typeSpeed={10}
-                        showCursor={false}
-                        startDelay={600}
-                        startWhenVisible={true}
-                      />
-                    </div>
-                  </div>
+                  )
                 )}
               </div>
               <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
                 <div className="text-xl font-semibold">Experience</div>
-                {output?.experience && (
-                  <div className="space-y-1 font-semibold">
-                    {output.experience?.map(
-                      (exp: Experience, index: number) => (
-                        <div
-                          key={index}
-                          className="grid grid-cols-3 items-start"
-                        >
-                          <ReactTyped
-                            strings={[`${exp.startYear} - ${exp.endYear}`]}
-                            className="text-sm md:text-base"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={700}
-                            startWhenVisible={true}
-                          />
-                          <ReactTyped
-                            strings={[`${exp.title} at ${exp.company}`]}
-                            className="text-xs md:text-base col-span-2"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={700}
-                            startWhenVisible={true}
-                          />
-                        </div>
-                      )
-                    )}
-                  </div>
+                {loading ? (
+                  <Skeleton height={20} width={200} count={3} />
+                ) : (
+                  output?.experience && (
+                    <div className="space-y-1 font-semibold">
+                      {output.experience?.map(
+                        (exp: Experience, index: number) => (
+                          <div
+                            key={index}
+                            className="grid grid-cols-3 items-start"
+                          >
+                            <ReactTyped
+                              strings={[`${exp.startYear} - ${exp.endYear}`]}
+                              className="text-sm md:text-base"
+                              typeSpeed={10}
+                              showCursor={false}
+                              startDelay={700}
+                              startWhenVisible={true}
+                            />
+                            <ReactTyped
+                              strings={[`${exp.title} at ${exp.company}`]}
+                              className="text-xs md:text-base col-span-2"
+                              typeSpeed={10}
+                              showCursor={false}
+                              startDelay={700}
+                              startWhenVisible={true}
+                            />
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )
                 )}
               </div>
               <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
                 <div className="text-xl font-semibold">Education</div>
-                {Array.isArray(output?.education) && (
-                  <div className="space-y-1 font-semibold">
-                    {output.education?.map((edu: Education, index: number) => (
-                      <div key={index}>
-                        <div className="grid grid-cols-3 items-center">
-                          <ReactTyped
-                            strings={[`University`]}
-                            className="text-sm md:text-base"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={800}
-                            startWhenVisible={true}
-                          />
-                          <ReactTyped
-                            strings={[`: ${edu.university}`]}
-                            className="text-sm md:text-base col-span-2"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={800}
-                            startWhenVisible={true}
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 items-center">
-                          <ReactTyped
-                            strings={[`Faculty/Major`]}
-                            className="text-sm md:text-base"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={900}
-                            startWhenVisible={true}
-                          />
-                          <ReactTyped
-                            strings={[`: ${edu.degree}`]}
-                            className="text-sm md:text-base col-span-2"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={900}
-                            startWhenVisible={true}
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 items-center">
-                          <ReactTyped
-                            strings={[`GPA`]}
-                            className="text-sm md:text-base"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={1000}
-                            startWhenVisible={true}
-                          />
-                          <ReactTyped
-                            strings={[`: ${edu.gpa}`]}
-                            className="text-sm md:text-base col-span-2"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={1000}
-                            startWhenVisible={true}
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 items-center">
-                          <ReactTyped
-                            strings={[`Dates`]}
-                            className="text-sm md:text-base"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={1100}
-                            startWhenVisible={true}
-                          />
-                          <ReactTyped
-                            strings={[`: ${edu.startYear} - ${edu.endYear}`]}
-                            className="text-sm md:text-base col-span-2"
-                            typeSpeed={10}
-                            showCursor={false}
-                            startDelay={1100}
-                            startWhenVisible={true}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                {loading ? (
+                  <Skeleton height={20} width={200} count={3} />
+                ) : (
+                  Array.isArray(output?.education) && (
+                    <div className="space-y-1 font-semibold">
+                      {output.education?.map(
+                        (edu: Education, index: number) => (
+                          <div key={index}>
+                            <div className="grid grid-cols-3 items-center">
+                              <ReactTyped
+                                strings={[`University`]}
+                                className="text-sm md:text-base"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={800}
+                                startWhenVisible={true}
+                              />
+                              <ReactTyped
+                                strings={[`: ${edu.university}`]}
+                                className="text-sm md:text-base col-span-2"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={800}
+                                startWhenVisible={true}
+                              />
+                            </div>
+                            <div className="grid grid-cols-3 items-center">
+                              <ReactTyped
+                                strings={[`Faculty/Major`]}
+                                className="text-sm md:text-base"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={900}
+                                startWhenVisible={true}
+                              />
+                              <ReactTyped
+                                strings={[`: ${edu.degree}`]}
+                                className="text-sm md:text-base col-span-2"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={900}
+                                startWhenVisible={true}
+                              />
+                            </div>
+                            <div className="grid grid-cols-3 items-center">
+                              <ReactTyped
+                                strings={[`GPA`]}
+                                className="text-sm md:text-base"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={1000}
+                                startWhenVisible={true}
+                              />
+                              <ReactTyped
+                                strings={[`: ${edu.gpa}`]}
+                                className="text-sm md:text-base col-span-2"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={1000}
+                                startWhenVisible={true}
+                              />
+                            </div>
+                            <div className="grid grid-cols-3 items-center">
+                              <ReactTyped
+                                strings={[`Dates`]}
+                                className="text-sm md:text-base"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={1100}
+                                startWhenVisible={true}
+                              />
+                              <ReactTyped
+                                strings={[
+                                  `: ${edu.startYear} - ${edu.endYear}`,
+                                ]}
+                                className="text-sm md:text-base col-span-2"
+                                typeSpeed={10}
+                                showCursor={false}
+                                startDelay={1100}
+                                startWhenVisible={true}
+                              />
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )
                 )}
               </div>
               <div className="space-y-0 lg:space-y-2 w-full flex flex-col">
                 <div className="text-xl font-semibold">Skills</div>
-                {output?.additional_information && (
-                  <ReactTyped
-                    strings={[
-                      `${output.additional_information?.technical_skills}`,
-                    ]}
-                    className="text-sm md:text-base font-semibold"
-                    typeSpeed={10}
-                    showCursor={false}
-                    startDelay={1200}
-                    startWhenVisible={true}
-                  />
+                {loading ? (
+                  <Skeleton height={20} width={200} />
+                ) : (
+                  output?.additional_information && (
+                    <ReactTyped
+                      strings={[
+                        `${output.additional_information?.technical_skills}`,
+                      ]}
+                      className="text-sm md:text-base font-semibold"
+                      typeSpeed={10}
+                      showCursor={false}
+                      startDelay={1200}
+                      startWhenVisible={true}
+                    />
+                  )
                 )}
               </div>
             </div>
