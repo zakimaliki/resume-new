@@ -36,12 +36,24 @@ interface AdditionalInformation {
   technical_skills?: string;
 }
 
+interface JobData {
+  title: string;
+  jobDescription: string;
+  responsibilities: string[];
+}
+
 interface Output {
   personal_information?: PersonalInformation | null;
   contact?: Contact | null;
   experience: Experience[] | null;
   education: Education[] | null;
   additional_information?: AdditionalInformation | null;
+  job_match_analysis?: {
+    match_score: number;
+    key_skills_match: string[];
+    missing_requirements: string[];
+    recommendations: string[];
+  } | null;
 }
 
 function Api() {
@@ -50,11 +62,70 @@ function Api() {
 
   const handleOpenAI = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    data: string
+    data: string,
+    jobData?: JobData
   ) => {
     e.preventDefault();
     try {
       setLoading(true);
+      
+      let prompt = `please summarize this resume or CV briefly with this layout as JSON Format:
+      1. first layout is name, Position or tittle, city,
+      2. second layout is contact email, linkedin, and contact number,
+      3. third layout is all experience,
+      5. fifth layout is education,
+      from this text: ${data}`;
+
+      if (jobData) {
+        prompt += `\n\nPlease also analyze how well this resume matches the following job requirements:
+        Job Title: ${jobData.title}
+        Job Description: ${jobData.jobDescription}
+        Key Responsibilities: ${jobData.responsibilities.join(', ')}
+        
+        Add a new field called 'job_match_analysis' to the JSON output with:
+        - match_score (0-100)
+        - key_skills_match
+        - missing_requirements
+        - recommendations`;
+      }
+
+      prompt += `\n\nmake exactly like this:
+      {
+        personal_information: {
+          name: "",
+          title: "",
+          city: "",
+        },
+        contact: {
+          email: "",
+          linkedin: "",
+          phone: "",
+        },
+        experience: [
+          {
+            company: "",
+            title: "",
+            startYear: "",
+            endYear: "",
+            location: "",
+            description: "",
+          },
+        ],
+        education: [
+          {
+            university: "",
+            degree: "",
+            gpa: "",
+            startYear: "",
+            endYear: "",
+          }
+        ],
+        additional_information: {
+          technical_skills: "",
+        },
+        ${jobData ? 'job_match_analysis: { match_score: 0, key_skills_match: [], missing_requirements: [], recommendations: [] },' : ''}
+      } and return only JSON format`;
+
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -66,47 +137,8 @@ function Api() {
             },
             {
               role: "user",
-              content: `please summarize this resume or CV briefly with this layout as JSON Format:
-              1. first layout is name, Position or tittle, city,
-              2. second layout is contact email, linkedin, and contact number,
-              3. third layout is all experience,
-              5. fifth layout is education,
-              from this text: ${data}, make exactly like this:
-              {
-                personal_information: {
-                  name: "",
-                  title: "",
-                  city: "",
-                },
-                contact: {
-                  email: "",
-                  linkedin: "",
-                  phone: "",
-                },
-                experience: [
-                  {
-                    company: "",
-                    title: "",
-                    startYear: "",
-                    endYear: "",
-                    location: "",
-                    description: "",
-                  },
-                ],
-                education: [
-                  {
-                    university: "",
-                    degree: "",
-                    gpa: "",
-                    startYear: "",
-                    endYear: "",
-                  }
-                ],
-                additional_information: {
-                  technical_skills: "",
-                },
-              } and return only JSON format`,
-            },
+              content: prompt,
+            }
           ],
         },
         {

@@ -1,105 +1,90 @@
 "use client";
 
 import { useState } from 'react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function RegisterPage() {
+export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
+    
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Password tidak cocok');
       return;
     }
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      // Redirect to login page after successful registration
-      router.push('/login');
-    } catch (err: any) {
-      setError(err.message);
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push('/login'); // Redirect ke halaman dashboard setelah register
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Create your account
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Buat Akun Baru
           </h2>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
-              <span className="block sm:inline">{error}</span>
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
             </div>
           )}
-          <div className="bg-white rounded-xl p-6 shadow-sm space-y-4">
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
+              <label htmlFor="email" className="sr-only">
+                Email
               </label>
               <input
-                id="email-address"
+                id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent sm:text-sm"
-                placeholder="Enter your email"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent sm:text-sm"
-                placeholder="Enter your password"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password
+              <label htmlFor="confirm-password" className="sr-only">
+                Konfirmasi Password
               </label>
               <input
                 id="confirm-password"
                 name="confirm-password"
                 type="password"
-                autoComplete="new-password"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent sm:text-sm"
-                placeholder="Confirm your password"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Konfirmasi Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
@@ -109,12 +94,20 @@ export default function RegisterPage() {
           <div>
             <button
               type="submit"
-              className="w-full bg-black text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-900 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Register
+              Daftar
             </button>
           </div>
         </form>
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-600">
+            Sudah punya akun?{' '}
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Login di sini
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
