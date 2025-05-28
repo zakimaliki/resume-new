@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Job {
+  id                    Int           @id @default(autoincrement())
+  title                String
+  location             String        @db.VarChar(100)
+  teamDescription      String        @db.Text @map("team_description")
+  jobDescription       String        @db.Text @map("job_description")
+  responsibilities     String[]      @db.Text
+  recruitmentTeamName  String        @db.VarChar(100) @map("recruitment_team_name")
+  recruitmentManager   String        @db.VarChar(100) @map("recruitment_manager")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  interviewers         Interviewer[]
+  candidates           Candidate[]
+
+  @@map("jobs")
+}
+
+model Interviewer {
+  id        Int      @id @default(autoincrement())
+  jobId     Int      @map("job_id")
+  department String  @db.VarChar(50)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  job       Job      @relation(fields: [jobId], references: [id])
+
+  @@map("interviewers")
+}
+
+model Candidate {
+  id        Int      @id @default(autoincrement())
+  jobId     Int      @map("job_id")
+  name      String   @db.VarChar(100)
+  location  String   @db.VarChar(100)
+  resumeData Json    @map("resume_data")
+  createdAt DateTime @default(now()) @map("created_at")
+  job       Job      @relation(fields: [jobId], references: [id])
+
+  @@map("candidates")
+} 

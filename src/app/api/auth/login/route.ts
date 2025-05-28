@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
+const prisma = new PrismaClient();
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+interface LoginRequest {
+  email: string;
+  password: string;
+}
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json() as LoginRequest;
+    const { email, password } = body;
 
+    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -25,20 +23,49 @@ export async function POST(request: Request) {
       );
     }
 
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1d' }
+    );
+
+    // Remove password from response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       message: 'Login successful',
-      user: {
-        uid: user.uid,
-        email: user.email
-      }
+      user: userWithoutPassword,
+      token,
     });
-  } catch (error: any) {
+  } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

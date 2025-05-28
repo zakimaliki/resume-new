@@ -139,6 +139,7 @@ function Api() {
       try {
         const parsedOutput = JSON.parse(cleanedText);
         setOutput(parsedOutput);
+        return parsedOutput;
       } catch (parseError) {
         console.error("Error parsing JSON:", parseError);
         // If parsing fails, try to extract JSON from the response
@@ -147,6 +148,7 @@ function Api() {
           try {
             const extractedJson = JSON.parse(jsonMatch[0]);
             setOutput(extractedJson);
+            return extractedJson;
           } catch (extractError) {
             console.error("Error extracting JSON:", extractError);
             throw new Error("Failed to parse API response as JSON");
@@ -157,6 +159,7 @@ function Api() {
       }
     } catch (error) {
       console.error("Error:", error);
+      return null;
     } finally {
       setLoading(false);
     }

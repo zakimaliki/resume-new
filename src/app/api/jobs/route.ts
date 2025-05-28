@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
@@ -22,10 +22,7 @@ async function verifyAuth() {
   return { token: token.value }
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET() {
   try {
     const auth = await verifyAuth()
     if ('error' in auth) {
@@ -35,20 +32,16 @@ export async function GET(
       )
     }
 
-    const job = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
+    const jobs = await prisma.job.findMany({
+      include: {
+        interviewers: true,
+        candidates: true
+      }
     })
 
-    if (!job) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(job)
+    return NextResponse.json(jobs)
   } catch (error) {
-    console.error('Error fetching job:', error)
+    console.error('Error fetching jobs:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -56,10 +49,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request) {
   try {
     const auth = await verifyAuth()
     if ('error' in auth) {
@@ -69,21 +59,19 @@ export async function PUT(
       )
     }
 
-    const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
-    })
-
-    if (!existingJob) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
     const body = await request.json()
     
     // Validate required fields
-    const requiredFields = ['title', 'location', 'teamDescription', 'jobDescription', 'responsibilities', 'recruitmentTeamName', 'recruitmentManager']
+    const requiredFields = [
+      'title',
+      'location',
+      'teamDescription',
+      'jobDescription',
+      'responsibilities',
+      'recruitmentTeamName',
+      'recruitmentManager'
+    ]
+    
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -93,9 +81,53 @@ export async function PUT(
       }
     }
 
+    // Create new job
+    const newJob = await prisma.job.create({
+      data: {
+        title: body.title,
+        location: body.location,
+        teamDescription: body.teamDescription,
+        jobDescription: body.jobDescription,
+        responsibilities: body.responsibilities,
+        recruitmentTeamName: body.recruitmentTeamName,
+        recruitmentManager: body.recruitmentManager
+      }
+    })
+
+    return NextResponse.json(newJob, { status: 201 })
+  } catch (error) {
+    console.error('Error creating job:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const auth = await verifyAuth()
+    if ('error' in auth) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: auth.status }
+      )
+    }
+
+    const body = await request.json()
+    
+    if (!body.id) {
+      return NextResponse.json(
+        { error: 'Job ID is required' },
+        { status: 400 }
+      )
+    }
+
     // Update job
     const updatedJob = await prisma.job.update({
-      where: { id: parseInt(params.id) },
+      where: {
+        id: body.id
+      },
       data: {
         title: body.title,
         location: body.location,
@@ -110,48 +142,6 @@ export async function PUT(
     return NextResponse.json(updatedJob)
   } catch (error) {
     console.error('Error updating job:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const auth = await verifyAuth()
-    if ('error' in auth) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: auth.status }
-      )
-    }
-
-    const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
-    })
-
-    if (!existingJob) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
-    // Delete job
-    await prisma.job.delete({
-      where: { id: parseInt(params.id) }
-    })
-
-    return NextResponse.json(
-      { message: 'Job deleted successfully' },
-      { status: 200 }
-    )
-  } catch (error) {
-    console.error('Error deleting job:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,17 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "module": "esnext",
-    "lib": [
-      "es2017",
-      "esnext.asynciterable",
-      "dom",
-      "dom.iterable"
-    ],
+    "module": "commonjs",
+    "lib": ["es2017", "esnext.asynciterable"],
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "removeComments": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -27,27 +22,8 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "jsx": "preserve",
-    "allowJs": true,
-    "strict": false,
-    "noEmit": true,
-    "incremental": true,
-    "isolatedModules": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "strict": true
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx",
-    ".next/types/**/*.ts"
-  ]
-}
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
+} 

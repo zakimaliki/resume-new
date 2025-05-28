@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
@@ -35,20 +35,25 @@ export async function GET(
       )
     }
 
-    const job = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
+    const candidate = await prisma.candidate.findUnique({
+      where: {
+        id: parseInt(params.id)
+      },
+      include: {
+        job: true
+      }
     })
 
-    if (!job) {
+    if (!candidate) {
       return NextResponse.json(
-        { error: 'Job not found' },
+        { error: 'Candidate not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(job)
+    return NextResponse.json(candidate)
   } catch (error) {
-    console.error('Error fetching job:', error)
+    console.error('Error fetching candidate:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -69,47 +74,27 @@ export async function PUT(
       )
     }
 
-    const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
-    })
-
-    if (!existingJob) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
     const body = await request.json()
     
-    // Validate required fields
-    const requiredFields = ['title', 'location', 'teamDescription', 'jobDescription', 'responsibilities', 'recruitmentTeamName', 'recruitmentManager']
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { error: `${field} is required` },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Update job
-    const updatedJob = await prisma.job.update({
-      where: { id: parseInt(params.id) },
+    // Update candidate
+    const updatedCandidate = await prisma.candidate.update({
+      where: {
+        id: parseInt(params.id)
+      },
       data: {
-        title: body.title,
+        jobId: body.jobId,
+        name: body.name,
         location: body.location,
-        teamDescription: body.teamDescription,
-        jobDescription: body.jobDescription,
-        responsibilities: body.responsibilities,
-        recruitmentTeamName: body.recruitmentTeamName,
-        recruitmentManager: body.recruitmentManager
+        resumeData: body.resumeData // Store the complete resume data
+      },
+      include: {
+        job: true
       }
     })
 
-    return NextResponse.json(updatedJob)
+    return NextResponse.json(updatedCandidate)
   } catch (error) {
-    console.error('Error updating job:', error)
+    console.error('Error updating candidate:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -130,28 +115,15 @@ export async function DELETE(
       )
     }
 
-    const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
+    await prisma.candidate.delete({
+      where: {
+        id: parseInt(params.id)
+      }
     })
 
-    if (!existingJob) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
-    // Delete job
-    await prisma.job.delete({
-      where: { id: parseInt(params.id) }
-    })
-
-    return NextResponse.json(
-      { message: 'Job deleted successfully' },
-      { status: 200 }
-    )
+    return NextResponse.json({ message: 'Candidate deleted successfully' })
   } catch (error) {
-    console.error('Error deleting job:', error)
+    console.error('Error deleting candidate:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
