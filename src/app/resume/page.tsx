@@ -164,29 +164,33 @@ export default function Home() {
 
                 {/* Experience */}
                 <Section title="Work Experience" loading={loading} lines={3}>
-                  {output?.experience?.map((exp, index) => (
-                    <div key={index}>
-                      <p className="font-medium text-gray-700">
-                        {exp.title} at {exp.company}
-                      </p>
-                      <p className="text-gray-600">{exp.startYear} - {exp.endYear}</p>
-                      <p className="text-gray-600">{exp.location}</p>
-                      <p className="text-gray-600">{exp.description}</p>
-                    </div>
-                  ))}
+                  {output?.experience && output.experience.length > 0 && 
+                    output.experience.map((exp, index) => (
+                      <div key={index}>
+                        <p className="font-medium text-gray-700">
+                          {exp.title} at {exp.company}
+                        </p>
+                        <p className="text-gray-600">{exp.startYear} - {exp.endYear}</p>
+                        <p className="text-gray-600">{exp.location}</p>
+                        <p className="text-gray-600">{exp.description}</p>
+                      </div>
+                    ))
+                  }
                 </Section>
 
                 {/* Education */}
                 <Section title="Education" loading={loading} lines={2}>
-                  {output?.education?.map((edu, index) => (
-                    <div key={index}>
-                      <p className="font-medium text-gray-700">
-                        {edu.degree} at {edu.university}
-                      </p>
-                      <p className="text-gray-600">{edu.startYear} - {edu.endYear}</p>
-                      {edu.gpa && <p className="text-gray-600">GPA: {edu.gpa}</p>}
-                    </div>
-                  ))}
+                  {output?.education && output.education.length > 0 && 
+                    output.education.map((edu, index) => (
+                      <div key={index}>
+                        <p className="font-medium text-gray-700">
+                          {edu.degree} at {edu.university}
+                        </p>
+                        <p className="text-gray-600">{edu.startYear} - {edu.endYear}</p>
+                        {edu.gpa && <p className="text-gray-600">GPA: {edu.gpa}</p>}
+                      </div>
+                    ))
+                  }
                 </Section>
 
                 {/* Skills */}
@@ -222,7 +226,7 @@ export default function Home() {
               </div>
             ) : (
               <pre className="w-full whitespace-pre-wrap text-xs md:text-sm font-mono">
-                {output ? JSON.stringify(output, null, 2) : "No data"}
+                {output ? JSON.stringify(output, null, 2) : ""}
               </pre>
             )}
           </div>
