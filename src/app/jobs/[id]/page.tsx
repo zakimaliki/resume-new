@@ -153,7 +153,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
           </div>
           <button
             className="w-full bg-black text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-900 transition mt-4"
-            onClick={() => router.push(`/resume`)}
+            onClick={() => router.push(`/resume?jobId=${resolvedParams.id}`)}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 5v10M5 10h10"/></svg>
             Tambah Kandidat

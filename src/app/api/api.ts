@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface PersonalInformation {
   name?: string;
@@ -126,33 +126,35 @@ function Api() {
         ${jobData ? 'job_match_analysis: { match_score: 0, key_skills_match: [], missing_requirements: [], recommendations: [] },' : ''}
       } and return only JSON format`;
 
-      const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "developer",
-              content: "You are a helpful assistant.",
-            },
-            {
-              role: "user",
-              content: prompt,
-            }
-          ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+      // Initialize Gemini API
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Clean and parse the response text
+      const cleanedText = text.replace(/```json|```/g, "").trim();
+      try {
+        const parsedOutput = JSON.parse(cleanedText);
+        setOutput(parsedOutput);
+      } catch (parseError) {
+        console.error("Error parsing JSON:", parseError);
+        // If parsing fails, try to extract JSON from the response
+        const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const extractedJson = JSON.parse(jsonMatch[0]);
+            setOutput(extractedJson);
+          } catch (extractError) {
+            console.error("Error extracting JSON:", extractError);
+            throw new Error("Failed to parse API response as JSON");
+          }
+        } else {
+          throw new Error("No valid JSON found in API response");
         }
-      );
-      setOutput(
-        JSON.parse(
-          response.data.choices[0].message.content.replace(/```json|```/g, "")
-        )
-      );
+      }
     } catch (error) {
       console.error("Error:", error);
     } finally {
