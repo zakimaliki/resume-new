@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 import Api from "../api/api";
 import { useState, useEffect } from "react";
 import pdfToText from "react-pdftotext";
@@ -13,7 +14,24 @@ import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
 import { FaArrowLeft } from "react-icons/fa";
 
-export default function Home() {
+interface Experience {
+  company?: string;
+  title?: string;
+  startYear?: string;
+  endYear?: string;
+  location?: string;
+  description?: string;
+}
+
+interface Education {
+  university?: string;
+  degree?: string;
+  gpa?: string;
+  startYear?: string;
+  endYear?: string;
+}
+
+function ResumeContent() {
   const { output, setOutput, handleOpenAI, loading } = Api();
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("summarize");
@@ -198,56 +216,53 @@ export default function Home() {
 
                 {/* Experience */}
                 <Section title="Work Experience" loading={loading} lines={3}>
-                  {output?.experience && output.experience.length > 0 && 
-                    output.experience.map((exp, index) => (
-                      <div key={index}>
-                        <p className="font-medium text-gray-700">
-                          {exp.title} at {exp.company}
-                        </p>
-                        <p className="text-gray-600">{exp.startYear} - {exp.endYear}</p>
-                        <p className="text-gray-600">{exp.location}</p>
-                        <p className="text-gray-600">{exp.description}</p>
-                      </div>
-                    ))
-                  }
+                  {output?.experience && (
+                    <div className="space-y-4">
+                      {output.experience.map((exp: Experience, index: number) => (
+                        <div key={index} className="border-l-2 border-gray-200 pl-4">
+                          <h3 className="font-medium text-gray-900">{exp.company}</h3>
+                          <p className="text-gray-600">{exp.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {exp.startYear} - {exp.endYear}
+                          </p>
+                          <p className="text-sm text-gray-500">{exp.location}</p>
+                          <p className="mt-2 text-gray-600">{exp.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Section>
 
                 {/* Education */}
                 <Section title="Education" loading={loading} lines={2}>
-                  {output?.education && output.education.length > 0 && 
-                    output.education.map((edu, index) => (
-                      <div key={index}>
-                        <p className="font-medium text-gray-700">
-                          {edu.degree} at {edu.university}
-                        </p>
-                        <p className="text-gray-600">{edu.startYear} - {edu.endYear}</p>
-                        {edu.gpa && <p className="text-gray-600">GPA: {edu.gpa}</p>}
-                      </div>
-                    ))
-                  }
-                </Section>
-
-                {/* Skills */}
-                <Section title="Skills" loading={loading}>
-                  {output?.additional_information?.technical_skills && (
-                    <p className="text-gray-600">{output.additional_information.technical_skills}</p>
+                  {output?.education && (
+                    <div className="space-y-4">
+                      {output.education.map((edu: Education, index: number) => (
+                        <div key={index} className="border-l-2 border-gray-200 pl-4">
+                          <h3 className="font-medium text-gray-900">{edu.university}</h3>
+                          <p className="text-gray-600">{edu.degree}</p>
+                          <p className="text-sm text-gray-500">
+                            {edu.startYear} - {edu.endYear}
+                          </p>
+                          {edu.gpa && <p className="text-sm text-gray-500">GPA: {edu.gpa}</p>}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </Section>
 
-                {/* Personal Info */}
-                <Section title="Personal Information" loading={loading} lines={3}>
-                  {output?.personal_information && (
+                {/* Skills */}
+                <Section title="Skills" loading={loading} lines={1}>
+                  {output?.additional_information?.technical_skills && (
                     <div className="text-gray-600">
-                      <p>{output.personal_information.name}</p>
-                      <p>{output.personal_information.title}</p>
-                      <p>{output.personal_information.city}</p>
+                      {output.additional_information.technical_skills}
                     </div>
                   )}
                 </Section>
               </div>
             ) : (
-              <pre className="w-full whitespace-pre-wrap text-xs md:text-sm font-mono">
-                {output ? JSON.stringify(output, null, 2) : ""}
+              <pre className="whitespace-pre-wrap text-sm text-gray-600">
+                {JSON.stringify(output, null, 2)}
               </pre>
             )}
           </div>
@@ -269,9 +284,21 @@ function Section({
   lines?: number;
 }) {
   return (
-    <div>
-      <div className="text-lg font-semibold text-gray-800 mb-2">{title}</div>
-      {loading ? <Skeleton height={20} width={200} count={lines} /> : children}
+    <div className="space-y-2">
+      <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+      {loading ? (
+        <Skeleton count={lines} />
+      ) : (
+        children
+      )}
     </div>
+  );
+}
+
+export default function ResumePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResumeContent />
+    </Suspense>
   );
 }

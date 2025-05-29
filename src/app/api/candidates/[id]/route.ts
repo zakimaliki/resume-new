@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
@@ -23,8 +23,7 @@ async function verifyAuth() {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
     const auth = await verifyAuth()
@@ -35,9 +34,12 @@ export async function GET(
       )
     }
 
+    // Extract id from the URL
+    const id = request.nextUrl.pathname.split('/').pop()
+
     const candidate = await prisma.candidate.findUnique({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(id as string)
       },
       include: {
         job: true
@@ -62,8 +64,7 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
     const auth = await verifyAuth()
@@ -75,11 +76,12 @@ export async function PUT(
     }
 
     const body = await request.json()
-    
+    // Extract id from the URL
+    const id = request.nextUrl.pathname.split('/').pop()
     // Update candidate
     const updatedCandidate = await prisma.candidate.update({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(id as string)
       },
       data: {
         jobId: body.jobId,
@@ -103,8 +105,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
     const auth = await verifyAuth()
@@ -114,10 +115,11 @@ export async function DELETE(
         { status: auth.status }
       )
     }
-
+    // Extract id from the URL
+    const id = request.nextUrl.pathname.split('/').pop()
     await prisma.candidate.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt(id as string)
       }
     })
 

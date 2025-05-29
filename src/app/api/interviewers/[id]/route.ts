@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
 
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest
 ) {
   try {
     // Verify authentication
@@ -16,10 +15,13 @@ export async function PUT(
     // Get the new interviewers data from request body
     const { interviewers } = await request.json();
 
+    // Extract id from the URL
+    const id = request.nextUrl.pathname.split('/').pop();
+
     // Delete existing interviewers
     await prisma.interviewer.deleteMany({
       where: {
-        jobId: parseInt(params.id)
+        jobId: parseInt(id as string)
       }
     });
 
@@ -30,7 +32,7 @@ export async function PUT(
           data: {
             name: interviewer.name,
             department: interviewer.department,
-            jobId: parseInt(params.id)
+            jobId: parseInt(id as string)
           }
         })
       )

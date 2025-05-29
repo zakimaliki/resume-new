@@ -1,7 +1,7 @@
 {
   "hosting": {
     "source": ".",
-    "site": "resume-demoai",
+    "site": "resume-new",
     "ignore": [
       "firebase.json",
       "**/.*",

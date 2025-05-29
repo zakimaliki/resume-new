@@ -10,43 +10,6 @@ interface Interviewer {
   jobId: number;
 }
 
-interface Candidate {
-  id: number;
-  name: string;
-  location: string;
-  jobId: number;
-  resumeData: {
-    personal_information: {
-      name: string;
-      title: string;
-      city: string;
-    };
-    contact: {
-      email: string;
-      linkedin: string;
-      phone: string;
-    };
-    experience: Array<{
-      company: string;
-      title: string;
-      startYear: string;
-      endYear: string;
-      location: string;
-      description: string;
-    }>;
-    education: Array<{
-      university: string;
-      degree: string;
-      gpa: string;
-      startYear: string;
-      endYear: string;
-    }>;
-    additional_information: {
-      technical_skills: string;
-    };
-  };
-}
-
 const prisma = new PrismaClient()
 
 // Helper function to verify authentication
@@ -67,8 +30,7 @@ async function verifyAuth() {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: Request
 ) {
   try {
     const auth = await verifyAuth()
@@ -79,8 +41,11 @@ export async function GET(
       )
     }
 
+    // Extract id from the URL
+    const id = request.url.split('/').pop()
+
     const job = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id as string) },
       include: {
         interviewers: true,
         candidates: true
@@ -98,6 +63,8 @@ export async function GET(
     const transformedJob = {
       id: job.id,
       title: job.title,
+      location: job.location,
+      teamDescription: job.teamDescription,
       jobDescription: job.jobDescription,
       responsibilities: job.responsibilities,
       recruitmentTeam: {
@@ -107,7 +74,7 @@ export async function GET(
           name: i.name,
           department: i.department
         })),
-        candidates: job.candidates.map((c: Candidate) => ({
+        candidates: job.candidates.map((c: { name: string; location: string }) => ({
           name: c.name,
           location: c.location
         }))
@@ -125,8 +92,7 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: Request
 ) {
   try {
     const auth = await verifyAuth()
@@ -137,8 +103,11 @@ export async function PUT(
       )
     }
 
+    // Extract id from the URL
+    const id = request.url.split('/').pop()
+
     const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id as string) }
     })
 
     if (!existingJob) {
@@ -163,7 +132,7 @@ export async function PUT(
 
     // Update job
     const updatedJob = await prisma.job.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id as string) },
       data: {
         title: body.title,
         location: body.location,
@@ -186,8 +155,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: Request
 ) {
   try {
     const auth = await verifyAuth()
@@ -197,27 +165,12 @@ export async function DELETE(
         { status: auth.status }
       )
     }
-
-    const existingJob = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
-    })
-
-    if (!existingJob) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      )
-    }
-
-    // Delete job
+    // Extract id from the URL
+    const id = request.url.split('/').pop()
     await prisma.job.delete({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id as string) }
     })
-
-    return NextResponse.json(
-      { message: 'Job deleted successfully' },
-      { status: 200 }
-    )
+    return NextResponse.json({ message: 'Job deleted successfully' })
   } catch (error) {
     console.error('Error deleting job:', error)
     return NextResponse.json(
