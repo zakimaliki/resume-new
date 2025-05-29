@@ -71,13 +71,34 @@ export async function POST(request: Request) {
       }
     }
 
+    // Validate jobId is a number
+    const jobId = Number(body.jobId)
+    if (isNaN(jobId)) {
+      return NextResponse.json(
+        { error: 'jobId must be a valid number' },
+        { status: 400 }
+      )
+    }
+
+    // Verify job exists
+    const job = await prisma.job.findUnique({
+      where: { id: jobId }
+    })
+
+    if (!job) {
+      return NextResponse.json(
+        { error: `Job with ID ${jobId} not found` },
+        { status: 404 }
+      )
+    }
+
     // Create new candidate with resume data
     const newCandidate = await prisma.candidate.create({
       data: {
-        jobId: body.jobId,
+        jobId,
         name: body.name,
         location: body.location,
-        resumeData: body.resumeData // Store the complete resume data
+        resumeData: body.resumeData
       },
       include: {
         job: true
@@ -87,8 +108,21 @@ export async function POST(request: Request) {
     return NextResponse.json(newCandidate, { status: 201 })
   } catch (error) {
     console.error('Error creating candidate:', error)
+    // Check for Prisma errors
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A candidate with this information already exists' },
+        { status: 409 }
+      )
+    }
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid job reference' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     )
   }

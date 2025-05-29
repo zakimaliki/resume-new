@@ -10,9 +10,9 @@ interface Job {
   company: string
   location: string
   type: string
-  description: string
+  jobDescription: string
   salary?: string
-  postedAt: string
+  createdAt: string
 }
 
 export default function DashboardPage() {
@@ -83,9 +83,12 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Job Listings</h1>
             <button
-              onClick={() => router.push('/jobs/new')}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              onClick={() => router.push('/jobs/create')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-black hover:bg-gray-900 transition-colors"
             >
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               Post New Job
             </button>
           </div>
@@ -121,41 +124,10 @@ export default function DashboardPage() {
                     </svg>
                     {job.location}
                   </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <svg
-                      className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    {job.type}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">Job Description</h4>
+                    <p className="text-sm text-gray-500 line-clamp-3">{job.jobDescription}</p>
                   </div>
-                  {job.salary && (
-                    <div className="mt-2 flex items-center text-sm text-gray-500">
-                      <svg
-                        className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      {job.salary}
-                    </div>
-                  )}
-                  <p className="mt-3 text-sm text-gray-500 line-clamp-2">{job.description}</p>
                   <div className="mt-4">
                     <button
                       onClick={() => router.push(`/jobs/${job.id}`)}
@@ -167,7 +139,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="bg-gray-50 px-4 py-4 sm:px-6">
                   <div className="text-sm text-gray-500">
-                    Posted {new Date(job.postedAt).toLocaleDateString()}
+                    Posted {new Date(job.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>

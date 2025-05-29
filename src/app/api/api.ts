@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Cookies from "js-cookie";
 
 interface PersonalInformation {
   name?: string;
@@ -37,6 +38,7 @@ interface AdditionalInformation {
 }
 
 interface JobData {
+  id: string;
   title: string;
   jobDescription: string;
   responsibilities: string[];
@@ -48,12 +50,6 @@ interface Output {
   experience: Experience[] | null;
   education: Education[] | null;
   additional_information?: AdditionalInformation | null;
-  job_match_analysis?: {
-    match_score: number;
-    key_skills_match: string[];
-    missing_requirements: string[];
-    recommendations: string[];
-  } | null;
 }
 
 function Api() {
@@ -75,19 +71,6 @@ function Api() {
       3. third layout is all experience,
       5. fifth layout is education,
       from this text: ${data}`;
-
-      if (jobData) {
-        prompt += `\n\nPlease also analyze how well this resume matches the following job requirements:
-        Job Title: ${jobData.title}
-        Job Description: ${jobData.jobDescription}
-        Key Responsibilities: ${jobData.responsibilities.join(', ')}
-        
-        Add a new field called 'job_match_analysis' to the JSON output with:
-        - match_score (0-100)
-        - key_skills_match
-        - missing_requirements
-        - recommendations`;
-      }
 
       prompt += `\n\nmake exactly like this:
       {
@@ -122,8 +105,7 @@ function Api() {
         ],
         additional_information: {
           technical_skills: "",
-        },
-        ${jobData ? 'job_match_analysis: { match_score: 0, key_skills_match: [], missing_requirements: [], recommendations: [] },' : ''}
+        }
       } and return only JSON format`;
 
       // Initialize Gemini API
@@ -139,6 +121,44 @@ function Api() {
       try {
         const parsedOutput = JSON.parse(cleanedText);
         setOutput(parsedOutput);
+
+        // If we have job data and the analysis was successful, add the candidate
+        if (jobData && parsedOutput.personal_information) {
+          try {
+            // Wait for a short delay to ensure the analysis is complete
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const candidateData = {
+              jobId: parseInt(jobData.id),
+              name: parsedOutput.personal_information.name || 'Unknown',
+              location: parsedOutput.personal_information.city || 'Unknown',
+              resumeData: parsedOutput
+            };
+
+            console.log('Creating candidate with data:', candidateData);
+
+            const candidateResponse = await fetch("/api/candidates", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${Cookies.get("token")}`
+              },
+              body: JSON.stringify(candidateData)
+            });
+
+            if (!candidateResponse.ok) {
+              const errorData = await candidateResponse.json();
+              throw new Error(`Failed to add candidate: ${errorData.error || candidateResponse.statusText}`);
+            }
+
+            // Show success message
+            alert("Resume berhasil dianalisis dan kandidat berhasil ditambahkan!");
+          } catch (error) {
+            console.error("Error adding candidate:", error);
+            alert(`Resume berhasil dianalisis, tetapi gagal menambahkan kandidat: ${error.message}`);
+          }
+        }
+
         return parsedOutput;
       } catch (parseError) {
         console.error("Error parsing JSON:", parseError);

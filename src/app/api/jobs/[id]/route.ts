@@ -3,6 +3,50 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 
+interface Interviewer {
+  id: number;
+  name: string;
+  department: string;
+  jobId: number;
+}
+
+interface Candidate {
+  id: number;
+  name: string;
+  location: string;
+  jobId: number;
+  resumeData: {
+    personal_information: {
+      name: string;
+      title: string;
+      city: string;
+    };
+    contact: {
+      email: string;
+      linkedin: string;
+      phone: string;
+    };
+    experience: Array<{
+      company: string;
+      title: string;
+      startYear: string;
+      endYear: string;
+      location: string;
+      description: string;
+    }>;
+    education: Array<{
+      university: string;
+      degree: string;
+      gpa: string;
+      startYear: string;
+      endYear: string;
+    }>;
+    additional_information: {
+      technical_skills: string;
+    };
+  };
+}
+
 const prisma = new PrismaClient()
 
 // Helper function to verify authentication
@@ -36,7 +80,11 @@ export async function GET(
     }
 
     const job = await prisma.job.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(params.id) },
+      include: {
+        interviewers: true,
+        candidates: true
+      }
     })
 
     if (!job) {
@@ -46,7 +94,27 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(job)
+    // Transform the data to match the expected format
+    const transformedJob = {
+      id: job.id,
+      title: job.title,
+      jobDescription: job.jobDescription,
+      responsibilities: job.responsibilities,
+      recruitmentTeam: {
+        teamName: job.recruitmentTeamName,
+        manager: job.recruitmentManager,
+        interviewers: job.interviewers.map((i: Interviewer) => ({
+          name: i.name,
+          department: i.department
+        })),
+        candidates: job.candidates.map((c: Candidate) => ({
+          name: c.name,
+          location: c.location
+        }))
+      }
+    }
+
+    return NextResponse.json(transformedJob)
   } catch (error) {
     console.error('Error fetching job:', error)
     return NextResponse.json(

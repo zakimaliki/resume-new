@@ -1,131 +1,50 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyToken } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-// Helper function to verify authentication
-async function verifyAuth() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')
-
-  if (!token) {
-    return { error: 'Unauthorized', status: 401 }
-  }
-
-  const isValid = await verifyToken(token.value)
-  if (!isValid) {
-    return { error: 'Invalid token', status: 401 }
-  }
-
-  return { token: token.value }
-}
-
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const auth = await verifyAuth()
-    if ('error' in auth) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: auth.status }
-      )
-    }
-
-    const interviewer = await prisma.interviewer.findUnique({
-      where: {
-        id: parseInt(params.id)
-      },
-      include: {
-        job: true
-      }
-    })
-
-    if (!interviewer) {
-      return NextResponse.json(
-        { error: 'Interviewer not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(interviewer)
-  } catch (error) {
-    console.error('Error fetching interviewer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+import { NextResponse, NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth";
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const auth = await verifyAuth()
-    if ('error' in auth) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: auth.status }
-      )
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    
-    // Update interviewer
-    const updatedInterviewer = await prisma.interviewer.update({
+    // Get the new interviewers data from request body
+    const { interviewers } = await request.json();
+
+    // Delete existing interviewers
+    await prisma.interviewer.deleteMany({
       where: {
-        id: parseInt(params.id)
-      },
-      data: {
-        jobId: body.jobId,
-        department: body.department,
-        name: body.name
-      },
-      include: {
-        job: true
+        jobId: parseInt(params.id)
       }
-    })
+    });
 
-    return NextResponse.json(updatedInterviewer)
-  } catch (error) {
-    console.error('Error updating interviewer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const auth = await verifyAuth()
-    if ('error' in auth) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: auth.status }
+    // Create new interviewers
+    const createdInterviewers = await Promise.all(
+      interviewers.map((interviewer: { name: string; department: string }) =>
+        prisma.interviewer.create({
+          data: {
+            name: interviewer.name,
+            department: interviewer.department,
+            jobId: parseInt(params.id)
+          }
+        })
       )
-    }
+    );
 
-    await prisma.interviewer.delete({
-      where: {
-        id: parseInt(params.id)
-      }
-    })
-
-    return NextResponse.json({ message: 'Interviewer deleted successfully' })
+    return NextResponse.json({ 
+      message: "Interviewers updated successfully",
+      interviewers: createdInterviewers 
+    });
   } catch (error) {
-    console.error('Error deleting interviewer:', error)
+    console.error("Error updating interviewers:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Failed to update interviewers" },
       { status: 500 }
-    )
+    );
   }
 } 

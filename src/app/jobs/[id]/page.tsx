@@ -2,6 +2,8 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
+import Cookies from "js-cookie";
+import Navbar from "@/components/Navbar";
 
 interface JobData {
   title: string;
@@ -13,11 +15,10 @@ interface JobData {
   recruitmentTeam: {
     teamName: string;
     manager: string;
-    interviewers: {
-      engineering: string[];
-      product: string[];
-      design: string[];
-    };
+    interviewers: Array<{
+      name: string;
+      department: string;
+    }>;
     candidates: Array<{
       name: string;
       location: string;
@@ -35,7 +36,11 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        const response = await fetch(`/api/jobs/${resolvedParams.id}`);
+        const response = await fetch(`/api/jobs/${resolvedParams.id}`, {
+          headers: {
+            'Authorization': `Bearer ${Cookies.get('token')}`
+          }
+        });
         const data = await response.json();
         setJobData(data);
       } catch (error) {
@@ -58,26 +63,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
-      <nav className="flex items-center justify-between w-full py-4 px-8 border-b bg-white">
-        <div className="flex items-center gap-2">
-          <span className="font-black text-xl">Warkop</span>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <div className="flex items-center bg-[#F5F5F5] rounded-full px-4 py-2 w-full max-w-xl shadow-sm">
-            <input
-              type="text"
-              placeholder="Ask a question"
-              className="bg-transparent outline-none flex-1 text-gray-700 placeholder-gray-400"
-            />
-            <button className="ml-2 bg-white rounded-full p-1 shadow hover:bg-gray-100 transition">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 10h10M13 6l4 4-4 4"/></svg>
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 ml-4">
-          <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="profile" className="w-8 h-8 rounded-full" />
-        </div>
-      </nav>
+      <Navbar />
       <main className="flex-1 flex flex-col lg:flex-row gap-8 px-8 py-8 max-w-7xl mx-auto w-full">
         <section className="flex-1">
           <h1 className="text-3xl font-bold mb-2">{jobData.title}</h1>
@@ -95,7 +81,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
             <div>
               <span className="font-bold">Tanggung Jawab:</span>
               <ul className="list-disc ml-6 text-gray-700 mt-1 space-y-1">
-                {jobData.responsibilities.map((responsibility, index) => (
+                {jobData.responsibilities?.map((responsibility, index) => (
                   <li key={index}>{responsibility}</li>
                 ))}
               </ul>
@@ -107,30 +93,34 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
             <div className="font-bold text-base">Hiring Team</div>
             <div className="flex items-center gap-2">
               <button 
-                className="text-xs px-2 py-1 border rounded hover:bg-gray-100"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2 text-sm font-medium"
                 onClick={() => router.push(`/jobs/${resolvedParams.id}/edit`)}
               >
-                Edit
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Edit Lowongan
               </button>
             </div>
           </div>
           <div className="bg-white rounded-xl p-6 shadow-md mb-4">
             <div className="grid grid-cols-2 gap-y-2 text-sm mb-4">
               <div className="font-semibold text-gray-700">Team</div>
-              <div className="text-gray-900 text-right">{jobData.recruitmentTeam.teamName}</div>
+              <div className="text-gray-900 text-right">{jobData.recruitmentTeam?.teamName}</div>
               <div className="font-semibold text-gray-700">Hiring Manager</div>
-              <div className="text-gray-900 text-right">{jobData.recruitmentTeam.manager}</div>
+              <div className="text-gray-900 text-right">{jobData.recruitmentTeam?.manager}</div>
               <div className="font-semibold text-gray-700 col-span-2 mt-2">Interviewers</div>
-              <div className="text-gray-700">Engineering</div>
-              <div className="text-gray-900 text-right">{jobData.recruitmentTeam.interviewers.engineering.join(", ")}</div>
-              <div className="text-gray-700">Product sense</div>
-              <div className="text-gray-900 text-right">{jobData.recruitmentTeam.interviewers.product.join(", ")}</div>
-              <div className="text-gray-700">Design sense</div>
-              <div className="text-gray-900 text-right">{jobData.recruitmentTeam.interviewers.design.join(", ")}</div>
+              {jobData.recruitmentTeam?.interviewers?.map((interviewer, index) => (
+                <React.Fragment key={index}>
+                  <div className="text-gray-700">{interviewer.department}</div>
+                  <div className="text-gray-900 text-right">{interviewer.name}</div>
+                </React.Fragment>
+              ))}
             </div>
             <div className="flex items-center justify-between mb-2 mt-6">
               <div className="font-semibold text-gray-700">Candidates</div>
-              {jobData.recruitmentTeam.candidates.length > 10 && (
+              {jobData.recruitmentTeam?.candidates?.length > 10 && (
                 <button
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                   onClick={() => setShowAllCandidates(!showAllCandidates)}
@@ -141,8 +131,8 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
             </div>
             <div className="grid grid-cols-2 gap-y-1 text-sm">
               {(showAllCandidates
-                ? jobData.recruitmentTeam.candidates
-                : jobData.recruitmentTeam.candidates.slice(0, 10)
+                ? jobData.recruitmentTeam?.candidates || []
+                : (jobData.recruitmentTeam?.candidates || []).slice(0, 10)
               ).map((candidate) => (
                 <React.Fragment key={candidate.name + '-' + candidate.location}>
                   <div className="text-gray-900">{candidate.name}</div>

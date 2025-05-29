@@ -1,7 +1,6 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import React from "react";
 import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
 
@@ -25,9 +24,8 @@ interface JobFormData {
   };
 }
 
-export default function EditJobPage({ params }: { params: Promise<{ id: string }> }) {
+export default function CreateJobPage() {
   const router = useRouter();
-  const resolvedParams = use(params);
   const [formData, setFormData] = useState<JobFormData>({
     title: "",
     location: "",
@@ -41,41 +39,6 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
       candidates: []
     }
   });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchJobData = async () => {
-      try {
-        const response = await fetch(`/api/jobs/${resolvedParams.id}`, {
-          headers: {
-            'Authorization': `Bearer ${Cookies.get('token')}`
-          }
-        });
-        const data = await response.json();
-        
-        // Transform the data to match our form structure
-        setFormData({
-          title: data.title,
-          location: data.location,
-          teamDescription: data.teamDescription,
-          jobDescription: data.jobDescription,
-          responsibilities: data.responsibilities,
-          recruitmentTeam: {
-            teamName: data.recruitmentTeam.teamName,
-            manager: data.recruitmentTeam.manager,
-            interviewers: data.recruitmentTeam.interviewers,
-            candidates: data.recruitmentTeam.candidates
-          }
-        });
-      } catch (error) {
-        console.error("Error fetching job data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobData();
-  }, [resolvedParams.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,9 +46,9 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
       // Filter out empty responsibilities
       const filteredResponsibilities = formData.responsibilities.filter(resp => resp.trim() !== "");
 
-      // Update the job
-      const jobResponse = await fetch(`/api/jobs/${resolvedParams.id}`, {
-        method: "PUT",
+      // First create the job
+      const jobResponse = await fetch("/api/jobs", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${Cookies.get("token")}`
@@ -103,31 +66,35 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
 
       if (!jobResponse.ok) {
         const errorData = await jobResponse.json();
-        throw new Error(errorData.error || "Failed to update job");
+        throw new Error(errorData.error || "Failed to create job");
       }
 
-      // Update interviewers
-      const filteredInterviewers = formData.recruitmentTeam.interviewers
-        .filter(interviewer => interviewer.name.trim() !== "" && interviewer.department.trim() !== "");
+      const jobData = await jobResponse.json();
 
-      const interviewersResponse = await fetch(`/api/interviewers/${resolvedParams.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Cookies.get("token")}`
-        },
-        body: JSON.stringify({
-          interviewers: filteredInterviewers
-        })
-      });
+      // Then create interviewers for the job
+      const interviewerPromises = formData.recruitmentTeam.interviewers
+        .filter(interviewer => interviewer.name.trim() !== "" && interviewer.department.trim() !== "")
+        .map(interviewer =>
+          fetch("/api/interviewers", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Cookies.get("token")}`
+            },
+            body: JSON.stringify({
+              jobId: jobData.id,
+              name: interviewer.name,
+              department: interviewer.department
+            })
+          })
+        );
 
-      if (!interviewersResponse.ok) {
-        throw new Error("Failed to update interviewers");
-      }
+      await Promise.all(interviewerPromises);
 
-      router.push(`/jobs/${resolvedParams.id}`);
+      router.push(`/jobs/${jobData.id}`);
     } catch (error) {
-      console.error("Error updating job:", error);
+      console.error("Error creating job:", error);
+      // You might want to show an error message to the user here
     }
   };
 
@@ -169,16 +136,12 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
     }));
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">Edit Lowongan</h1>
+        <h1 className="text-3xl font-bold mb-8">Buat Lowongan Baru</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-xl p-6 shadow-sm">
@@ -334,7 +297,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Simpan Perubahan
+              Post New Job
             </button>
           </div>
         </form>

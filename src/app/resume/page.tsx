@@ -9,6 +9,9 @@ import { FaRegFile } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useSearchParams, useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import Navbar from "@/components/Navbar";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function Home() {
   const { output, setOutput, handleOpenAI, loading } = Api();
@@ -50,14 +53,34 @@ export default function Home() {
 
       try {
         if (jobIdFromSearchParams) {
-          const jobResponse = await fetch(`/api/jobs/${jobIdFromSearchParams}`);
+          const token = Cookies.get('token');
+          if (!token) {
+            throw new Error('No authentication token found');
+          }
+
+          const jobResponse = await fetch(`/api/jobs/${jobIdFromSearchParams}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (!jobResponse.ok) {
+            throw new Error(`Failed to fetch job: ${jobResponse.statusText}`);
+          }
           const jobData = await jobResponse.json();
+          console.log('Fetched job data:', jobData); // Debug log
+          
+          if (!jobData || !jobData.id) {
+            throw new Error('Invalid job data received');
+          }
+          
           handleOpenAI(e, extractedText, jobData);
         } else {
           handleOpenAI(e, extractedText);
         }
       } catch (error) {
         console.error("Error fetching job details:", error);
+        alert(`Error: ${error.message}`);
         handleOpenAI(e, extractedText);
       }
     }
@@ -82,11 +105,30 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#fafbfc]">
+      <Navbar />
       <div className="w-full bg-white shadow-sm p-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Job ID: {jobIdFromSearchParams || "No job selected"}
-          </h1>
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                if (jobIdFromSearchParams) {
+                  router.push(`/jobs/${jobIdFromSearchParams}`);
+                } else {
+                  router.push('/jobs');
+                }
+              }}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <FaArrowLeft />
+              <span>Back to Jobs</span>
+            </button>
+          </div>
+          <button
+            onClick={handleTab}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            {tab === "summarize" ? "View Raw Data" : "View Summary"}
+          </button>
         </div>
       </div>
 
@@ -141,14 +183,6 @@ export default function Home() {
         {/* RIGHT SIDE: Output Viewer */}
         <div className="flex flex-col justify-center px-6 sm:px-12 py-12">
           <div className="w-full max-w-3xl bg-white rounded-xl shadow-sm p-14 min-h-[600px] flex flex-col gap-6 relative lg:max-h-[calc(100vh-150px)] overflow-y-auto">
-            <button
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 text-2xl"
-              onClick={handleTab}
-              aria-label="Toggle JSON"
-            >
-              {"{}"}
-            </button>
-
             {tab === "summarize" ? (
               <div className="flex flex-col gap-6">
                 {/* Contact */}
@@ -210,19 +244,6 @@ export default function Home() {
                     </div>
                   )}
                 </Section>
-
-                {/* Job Match */}
-                {output?.job_match_analysis && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Job Match Analysis</h3>
-                    <p className="font-medium text-gray-700 mb-2">
-                      Match Score: {output.job_match_analysis.match_score}%
-                    </p>
-                    <List title="Key Skills Match" items={output.job_match_analysis.key_skills_match} />
-                    <List title="Missing Requirements" items={output.job_match_analysis.missing_requirements} />
-                    <List title="Recommendations" items={output.job_match_analysis.recommendations} />
-                  </div>
-                )}
               </div>
             ) : (
               <pre className="w-full whitespace-pre-wrap text-xs md:text-sm font-mono">
@@ -251,20 +272,6 @@ function Section({
     <div>
       <div className="text-lg font-semibold text-gray-800 mb-2">{title}</div>
       {loading ? <Skeleton height={20} width={200} count={lines} /> : children}
-    </div>
-  );
-}
-
-// 👇 List Utility Component
-function List({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="mb-4">
-      <h4 className="font-medium text-gray-700 mb-2">{title}:</h4>
-      <ul className="list-disc list-inside text-gray-600">
-        {items.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
     </div>
   );
 }
