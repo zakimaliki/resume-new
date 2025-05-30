@@ -10,9 +10,9 @@ import { FaRegFile } from "react-icons/fa";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useSearchParams, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
 import { FaArrowLeft } from "react-icons/fa";
+import { getJobById } from "@/services/api";
 
 interface Experience {
   company?: string;
@@ -71,21 +71,7 @@ function ResumeContent() {
 
       try {
         if (jobIdFromSearchParams) {
-          const token = Cookies.get('token');
-          if (!token) {
-            throw new Error('No authentication token found');
-          }
-
-          const jobResponse = await fetch(`/api/jobs/${jobIdFromSearchParams}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (!jobResponse.ok) {
-            throw new Error(`Failed to fetch job: ${jobResponse.statusText}`);
-          }
-          const jobData = await jobResponse.json();
+          const jobData = await getJobById(jobIdFromSearchParams);
           console.log('Fetched job data:', jobData); // Debug log
           
           if (!jobData || !jobData.id) {

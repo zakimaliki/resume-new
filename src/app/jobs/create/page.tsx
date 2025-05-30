@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
+import { createJob, createInterviewer } from '@/services/api';
 
 interface JobFormData {
   title: string;
@@ -47,45 +47,24 @@ export default function CreateJobPage() {
       const filteredResponsibilities = formData.responsibilities.filter(resp => resp.trim() !== "");
 
       // First create the job
-      const jobResponse = await fetch("/api/jobs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Cookies.get("token")}`
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          location: formData.location,
-          teamDescription: formData.teamDescription,
-          jobDescription: formData.jobDescription,
-          responsibilities: filteredResponsibilities,
-          recruitmentTeamName: formData.recruitmentTeam.teamName,
-          recruitmentManager: formData.recruitmentTeam.manager
-        })
+      const jobData = await createJob({
+        title: formData.title,
+        location: formData.location,
+        teamDescription: formData.teamDescription,
+        jobDescription: formData.jobDescription,
+        responsibilities: filteredResponsibilities,
+        recruitmentTeamName: formData.recruitmentTeam.teamName,
+        recruitmentManager: formData.recruitmentTeam.manager
       });
-
-      if (!jobResponse.ok) {
-        const errorData = await jobResponse.json();
-        throw new Error(errorData.error || "Failed to create job");
-      }
-
-      const jobData = await jobResponse.json();
 
       // Then create interviewers for the job
       const interviewerPromises = formData.recruitmentTeam.interviewers
         .filter(interviewer => interviewer.name.trim() !== "" && interviewer.department.trim() !== "")
         .map(interviewer =>
-          fetch("/api/interviewers", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Cookies.get("token")}`
-            },
-            body: JSON.stringify({
-              jobId: jobData.id,
-              name: interviewer.name,
-              department: interviewer.department
-            })
+          createInterviewer({
+            jobId: jobData.id,
+            name: interviewer.name,
+            department: interviewer.department
           })
         );
 

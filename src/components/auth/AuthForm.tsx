@@ -3,15 +3,10 @@
 import React, { useState, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Cookies from 'js-cookie'
+import { login, register } from '@/services/api'
 
 interface AuthFormProps {
   type: 'login' | 'register'
-}
-
-interface AuthResponse {
-  token?: string
-  error?: string
 }
 
 export default function AuthForm({ type }: AuthFormProps) {
@@ -29,40 +24,49 @@ export default function AuthForm({ type }: AuthFormProps) {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/auth/${type}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      if (type === 'login') {
+        const data = await login(formData);
 
-      const data = (await response.json()) as AuthResponse
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong')
-      }
-
-      if (type === 'login' && data.token) {
-        // Store token in cookie
-        try {
-          Cookies.set('token', data.token, { path: '/' })
-          // Redirect to dashboard after successful login
-          router.push('/dashboard')
-        } catch (e) {
-          console.error('Failed to store token:', e)
-          setError('Failed to store authentication token')
+        if (data && data.token) {
+          // Store token in localStorage
+          try {
+            localStorage.setItem('token', data.token);
+            // Redirect to dashboard after successful login
+            router.push('/dashboard');
+          } catch (e) {
+            console.error('Failed to store token in localStorage:', e);
+            setError('Failed to store authentication token');
+          }
+        } else if (data && data.error) {
+          // API returned an explicit error message
+          throw new Error(data.error);
+        } else {
+          // Handle cases where data or data.token/data.error are unexpected
+          console.error('Unexpected login API response:', data);
+          throw new Error('Login failed: Invalid response from server');
         }
       } else if (type === 'register') {
-        // Show success message and redirect to login
-        setError('')
-        // Redirect to login page after successful registration
-        router.push('/auth/login')
+        const data = await register(formData);
+
+        if (data && data.error) {
+          // API returned an explicit error message
+          throw new Error(data.error);
+        } else if (data) {
+           // Assuming success if no error is returned on register
+           setError(''); // Clear any previous error
+           // Redirect to login page after successful registration
+           router.push('/auth/login');
+        } else {
+           // Handle unexpected response for register
+           console.error('Unexpected register API response:', data);
+           throw new Error('Registration failed: Invalid response from server');
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      console.error('Auth form submission error:', err);
+      setError(err instanceof Error ? err.message : 'Something went wrong during authentication');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 

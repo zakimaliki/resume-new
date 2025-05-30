@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Cookies from "js-cookie";
+import { createCandidate } from "@/services/api";
 
 interface PersonalInformation {
   name?: string;
@@ -137,19 +137,7 @@ function Api() {
 
             console.log('Creating candidate with data:', candidateData);
 
-            const candidateResponse = await fetch("/api/candidates", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${Cookies.get("token")}`
-              },
-              body: JSON.stringify(candidateData)
-            });
-
-            if (!candidateResponse.ok) {
-              const errorData = await candidateResponse.json();
-              throw new Error(`Failed to add candidate: ${errorData.error || candidateResponse.statusText}`);
-            }
+            await createCandidate(candidateData);
 
             // Show success message
             alert("Resume berhasil dianalisis dan kandidat berhasil ditambahkan!");

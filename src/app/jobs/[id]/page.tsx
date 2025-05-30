@@ -2,8 +2,8 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
-import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
+import { getJobById } from '@/services/api';
 
 interface JobData {
   title: string;
@@ -36,12 +36,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        const response = await fetch(`/api/jobs/${resolvedParams.id}`, {
-          headers: {
-            'Authorization': `Bearer ${Cookies.get('token')}`
-          }
-        });
-        const data = await response.json();
+        const data = await getJobById(resolvedParams.id);
         setJobData(data);
       } catch (error) {
         console.error("Error fetching job data:", error);

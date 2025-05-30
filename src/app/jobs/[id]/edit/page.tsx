@@ -2,8 +2,8 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
-import Cookies from "js-cookie";
 import Navbar from "@/components/Navbar";
+import { getJobById, updateJob, updateInterviewers } from '@/services/api';
 
 interface JobFormData {
   title: string;
@@ -46,12 +46,7 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        const response = await fetch(`/api/jobs/${resolvedParams.id}`, {
-          headers: {
-            'Authorization': `Bearer ${Cookies.get('token')}`
-          }
-        });
-        const data = await response.json();
+        const data = await getJobById(resolvedParams.id);
         
         // Transform the data to match our form structure
         setFormData({
@@ -84,46 +79,21 @@ export default function EditJobPage({ params }: { params: Promise<{ id: string }
       const filteredResponsibilities = formData.responsibilities.filter(resp => resp.trim() !== "");
 
       // Update the job
-      const jobResponse = await fetch(`/api/jobs/${resolvedParams.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Cookies.get("token")}`
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          location: formData.location,
-          teamDescription: formData.teamDescription,
-          jobDescription: formData.jobDescription,
-          responsibilities: filteredResponsibilities,
-          recruitmentTeamName: formData.recruitmentTeam.teamName,
-          recruitmentManager: formData.recruitmentTeam.manager
-        })
+      await updateJob(resolvedParams.id, {
+        title: formData.title,
+        location: formData.location,
+        teamDescription: formData.teamDescription,
+        jobDescription: formData.jobDescription,
+        responsibilities: filteredResponsibilities,
+        recruitmentTeamName: formData.recruitmentTeam.teamName,
+        recruitmentManager: formData.recruitmentTeam.manager
       });
-
-      if (!jobResponse.ok) {
-        const errorData = await jobResponse.json();
-        throw new Error(errorData.error || "Failed to update job");
-      }
 
       // Update interviewers
       const filteredInterviewers = formData.recruitmentTeam.interviewers
         .filter(interviewer => interviewer.name.trim() !== "" && interviewer.department.trim() !== "");
 
-      const interviewersResponse = await fetch(`/api/interviewers/${resolvedParams.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Cookies.get("token")}`
-        },
-        body: JSON.stringify({
-          interviewers: filteredInterviewers
-        })
-      });
-
-      if (!interviewersResponse.ok) {
-        throw new Error("Failed to update interviewers");
-      }
+      await updateInterviewers(resolvedParams.id, filteredInterviewers);
 
       router.push(`/jobs/${resolvedParams.id}`);
     } catch (error) {
